@@ -1,3 +1,6 @@
+// chkdns
+// https://github.com/drieiro/chkdns
+
 package main
 
 import (
@@ -9,7 +12,7 @@ import (
 
 const (
     programName = "chkdns"
-    programVersion = "2.1"
+    programVersion = "1.1"
 )
 
 func main() {
@@ -26,23 +29,20 @@ func main() {
         // Obter rexistros @
         atRecords, err := net.LookupIP(domain)
             if err != nil {
-                    fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro A: %v\n", err)
-                    // os.Exit(1)
+                    fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro A (@): %v\n", err)
             }
 
         // Obter rexistros www
         wwwdomain := "www." + domain
         wwwRecords, err := net.LookupIP(wwwdomain)
             if err != nil {
-                    fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro A: %v\n", err)
-                    // os.Exit(1)
+                    fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro A (www): %v\n", err)
             }
 
         // Obter rexistros MX
         mxRecords, err := net.LookupMX(domain)
             if err != nil {
                     fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro MX: %v\n", err)
-                    // os.Exit(1)
             }
 
         // Obter rexistros NS
@@ -55,7 +55,6 @@ func main() {
         txtRecords, err := net.LookupTXT(domain)
             if err != nil {
                 fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro TXT: %v\n", err)
-                    // os.Exit(1)
             }
 
         // Obter rexistro DKIM
@@ -63,7 +62,6 @@ func main() {
         dkimRecords, err := net.LookupTXT(defaultdkim)
             if err != nil {
                 fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro DKIM: %v\n", err)
-                    // os.Exit(1)
             }
 
 
@@ -93,7 +91,7 @@ func main() {
 
         // Mostrar rexistros MX
         for _, mx := range mxRecords {
-            // Also get MX record's IP.
+            // Obter tamén a resolución IP do MX.
             mxIP, err := net.LookupIP(mx.Host)
                 if err != nil {
                     // mxPTR = append(mxPTR, net.IP(fmt.Sprintf("No IP")))
