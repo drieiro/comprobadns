@@ -12,7 +12,7 @@ import (
 
 const (
     programName = "chkdns"
-    programVersion = "1.1"
+    programVersion = "1.2"
 )
 
 func main() {
@@ -77,7 +77,7 @@ func main() {
             if err != nil {
                     ptr = append(ptr, "Sen PTR")
             }
-            fmt.Fprintln(w, "@\t", at, "-", ptr)
+            fmt.Fprintln(w, "@\t", at, "-->", ptr)
         }
 
         // Mostrar rexistros WWW
@@ -86,7 +86,7 @@ func main() {
             if err != nil {
                     ptr = append(ptr, "Sen PTR")
             }
-            fmt.Fprintln(w, "WWW\t", www, "-", ptr)
+            fmt.Fprintln(w, "WWW\t", www, "-->", ptr)
         }
 
         // Mostrar rexistros MX
@@ -94,14 +94,18 @@ func main() {
             // Obter tamén a resolución IP do MX.
             mxIP, err := net.LookupIP(mx.Host)
                 if err != nil {
-                    // mxPTR = append(mxPTR, net.IP(fmt.Sprintf("No IP")))
                     mxIP = append(mxIP, net.IP(fmt.Sprintf("Sen IP")))
                 }
-            fmt.Fprintln(w, "MX\t", mx.Host, "-", mxIP)
+            fmt.Fprintln(w, "MX\t", mx.Host, "-->", mxIP)
         }
         // Mostrar rexistros NS
         for _, ns := range nsRecords {
-            fmt.Fprintln(w, "NS\t", ns)
+            // Obter tamén a resolución IP dos NS.
+            nsIP, err := net.LookupIP(ns.Host)
+                if err != nil {
+                    nsIP = append(nsIP, net.IP(fmt.Sprintf("Sen IP")))
+                }
+            fmt.Fprintln(w, "NS\t", ns.Host, "-->", nsIP)
         }
 
         // Mostrar rexistros TXT
@@ -111,6 +115,7 @@ func main() {
 
         // Mostrar o rexistro DKIM principal (default._domainkey)
         fmt.Fprintln(w, "DKIM\t", dkimRecords)
+
         w.Flush()
         fmt.Print("\n")
     }
