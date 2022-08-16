@@ -64,6 +64,12 @@ func main() {
                 fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro DKIM: %v\n", err)
             }
 
+        // Obter rexistro DMARC
+        defaultdmarc := "_dmarc." + domain
+        dmarcRecords, err := net.LookupTXT(defaultdmarc)
+            if err != nil {
+                fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro DMARC: %v\n", err)
+            }
 
         fmt.Print("\n")
 
@@ -114,7 +120,14 @@ func main() {
         }
 
         // Mostrar o rexistro DKIM principal (default._domainkey)
-        fmt.Fprintln(w, "DKIM\t", dkimRecords)
+        for _, dkim := range dkimRecords {
+            fmt.Fprintln(w, "DKIM\t", dkim)
+        }
+
+        // Mostrar o rexistro DMARC principal (_dmarc)
+        for _, dmarc := range dmarcRecords {
+            fmt.Fprintln(w, "DMARC\t", dmarc)
+        }
 
         w.Flush()
         fmt.Print("\n")
