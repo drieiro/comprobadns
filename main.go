@@ -12,7 +12,7 @@ import (
 
 const (
     programName = "chkdns"
-    programVersion = "1.2"
+    programVersion = "1.3"
 )
 
 func main() {
@@ -80,18 +80,18 @@ func main() {
         for _, at := range atRecords {
             // Isto mostra os rexistros PTR, por exemplo: hl1074.dinaserver.com
             ptr, err := net.LookupAddr(at.String())
-            if err != nil {
-                    ptr = append(ptr, "Sen PTR")
-            }
+                if err != nil {
+                        ptr = append(ptr, "Sen PTR")
+                }
             fmt.Fprintln(w, "@\t", at, "-->", ptr)
         }
 
         // Mostrar rexistros WWW
         for _, www := range wwwRecords {
             ptr, err := net.LookupAddr(www.String())
-            if err != nil {
-                    ptr = append(ptr, "Sen PTR")
-            }
+                if err != nil {
+                        ptr = append(ptr, "Sen PTR")
+                }
             fmt.Fprintln(w, "WWW\t", www, "-->", ptr)
         }
 
