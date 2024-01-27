@@ -12,7 +12,7 @@ import (
 
 const (
     programName = "chkdns"
-    programVersion = "1.3"
+    programVersion = "1.4"
 )
 
 func main() {
@@ -102,7 +102,16 @@ func main() {
                 if err != nil {
                     mxIP = append(mxIP, net.IP(fmt.Sprintf("Sen IP")))
                 }
-            fmt.Fprintln(w, "MX\t", mx.Host, "-->", mxIP)
+            
+            // Obter a resolución inversa da IP.
+            for _, ip := range mxIP {
+                ptr, err := net.LookupAddr(ip.String())
+                if err != nil {
+                    ptr = append(ptr, "Sen PTR")
+                }
+                // Finalmente mostrar a información por pantalla
+                fmt.Fprintln(w, "MX\t", mx.Host, "-->", ip, "-->", ptr)
+            }
         }
         // Mostrar rexistros NS
         for _, ns := range nsRecords {
