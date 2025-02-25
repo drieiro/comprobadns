@@ -12,7 +12,7 @@ import (
 
 const (
     programName = "chkdns"
-    programVersion = "1.3"
+    programVersion = "1.3.1"
 )
 
 func main() {
