@@ -1,135 +1,133 @@
-// chkdns
-// https://github.com/drieiro/chkdns
+// comprobadns
+// https://github.com/drieiro/comprobadns
 
 package main
 
 import (
-    "fmt"
-    "os"
-    "net"
-    "text/tabwriter"
+	"fmt"
+	"net"
+	"os"
+	"text/tabwriter"
 )
 
 const (
-    programName = "chkdns"
-    programVersion = "1.3.1"
+	programName    = "comprobadns"
+	programVersion = "1.3.2"
 )
 
 func main() {
-    for {
-        fmt.Print("Introduce un dominio: ")
-        var domain string
-        // Manexo dos erros
-            _, err := fmt.Scanln(&domain)
-            if err != nil {
-                fmt.Fprintln(os.Stderr, err)
-                return
-            }
+	fmt.Printf("%s v%s\n\n", programName, programVersion)
 
-        // Obter rexistros @
-        atRecords, err := net.LookupIP(domain)
-            if err != nil {
-                    fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro A (@): %v\n", err)
-            }
+	// Comprobar se se pasou dominio por argumento
+	if len(os.Args) > 1 {
+		domain := os.Args[1]
+		checkDNS(domain)
+		return
+	}
 
-        // Obter rexistros www
-        wwwdomain := "www." + domain
-        wwwRecords, err := net.LookupIP(wwwdomain)
-            if err != nil {
-                    fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro A (www): %v\n", err)
-            }
+	// Modo interactivo
+	for {
+		var domain string
+		fmt.Print("Introduce un dominio: ")
+		if _, err := fmt.Scanln(&domain); err != nil {
+			fmt.Fprintf(os.Stderr, "Erro ao ler o dominio: %v\n", err)
+			return
+		}
+		checkDNS(domain)
+		fmt.Println()
+	}
+}
 
-        // Obter rexistros MX
-        mxRecords, err := net.LookupMX(domain)
-            if err != nil {
-                    fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro MX: %v\n", err)
-            }
+func checkDNS(domain string) {
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 
-        // Obter rexistros NS
-        nsRecords, err := net.LookupNS(domain)
-            if err != nil {
-                fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro NS: %v\n", err)
-            }
+	// Rexistro @
+	if ips, err := net.LookupIP(domain); err == nil {
+		for _, ip := range ips {
+			ptr := lookupPTR(ip)
+			fmt.Fprintf(w, "@\t%s --> %v\n", ip, ptr)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro A (@): %v\n", err)
+	}
 
-        // Obter rexistros TXT
-        txtRecords, err := net.LookupTXT(domain)
-            if err != nil {
-                fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro TXT: %v\n", err)
-            }
+	// Rexistro WWW
+	www := "www." + domain
+	if ips, err := net.LookupIP(www); err == nil {
+		for _, ip := range ips {
+			ptr := lookupPTR(ip)
+			fmt.Fprintf(w, "WWW\t%s --> %v\n", ip, ptr)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro A (www): %v\n", err)
+	}
 
-        // Obter rexistro DKIM
-        defaultdkim := "default._domainkey." + domain
-        dkimRecords, err := net.LookupTXT(defaultdkim)
-            if err != nil {
-                fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro DKIM: %v\n", err)
-            }
+	// Rexistros MX
+	if mxs, err := net.LookupMX(domain); err == nil {
+		for _, mx := range mxs {
+			ips := lookupIPOrPlaceholder(mx.Host)
+			fmt.Fprintf(w, "MX\t%s --> %v\n", mx.Host, ips)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro MX: %v\n", err)
+	}
 
-        // Obter rexistro DMARC
-        defaultdmarc := "_dmarc." + domain
-        dmarcRecords, err := net.LookupTXT(defaultdmarc)
-            if err != nil {
-                fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro DMARC: %v\n", err)
-            }
+	// Rexistros NS
+	if nss, err := net.LookupNS(domain); err == nil {
+		for _, ns := range nss {
+			ips := lookupIPOrPlaceholder(ns.Host)
+			fmt.Fprintf(w, "NS\t%s --> %v\n", ns.Host, ips)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro NS: %v\n", err)
+	}
 
-        fmt.Print("\n")
+	// Rexistros TXT
+	if txts, err := net.LookupTXT(domain); err == nil {
+		for _, txt := range txts {
+			fmt.Fprintf(w, "TXT\t%s\n", txt)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro TXT: %v\n", err)
+	}
 
-        // Configuración da táboa
-        w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+	// DKIM
+	dkim := "default._domainkey." + domain
+	if dkimTXT, err := net.LookupTXT(dkim); err == nil {
+		for _, val := range dkimTXT {
+			fmt.Fprintf(w, "DKIM\t%s\n", val)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro DKIM: %v\n", err)
+	}
 
-        // Mostrar rexistros @
-        for _, at := range atRecords {
-            // Isto mostra os rexistros PTR, por exemplo: hl1074.dinaserver.com
-            ptr, err := net.LookupAddr(at.String())
-                if err != nil {
-                        ptr = append(ptr, "Sen PTR")
-                }
-            fmt.Fprintln(w, "@\t", at, "-->", ptr)
-        }
+	// DMARC
+	dmarc := "_dmarc." + domain
+	if dmarcTXT, err := net.LookupTXT(dmarc); err == nil {
+		for _, val := range dmarcTXT {
+			fmt.Fprintf(w, "DMARC\t%s\n", val)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "Non foi posible obter o rexistro DMARC: %v\n", err)
+	}
 
-        // Mostrar rexistros WWW
-        for _, www := range wwwRecords {
-            ptr, err := net.LookupAddr(www.String())
-                if err != nil {
-                        ptr = append(ptr, "Sen PTR")
-                }
-            fmt.Fprintln(w, "WWW\t", www, "-->", ptr)
-        }
+	w.Flush()
+}
 
-        // Mostrar rexistros MX
-        for _, mx := range mxRecords {
-            // Obter tamén a resolución IP do MX.
-            mxIP, err := net.LookupIP(mx.Host)
-                if err != nil {
-                    mxIP = append(mxIP, net.IP(fmt.Sprintf("Sen IP")))
-                }
-            fmt.Fprintln(w, "MX\t", mx.Host, "-->", mxIP)
-        }
-        // Mostrar rexistros NS
-        for _, ns := range nsRecords {
-            // Obter tamén a resolución IP dos NS.
-            nsIP, err := net.LookupIP(ns.Host)
-                if err != nil {
-                    nsIP = append(nsIP, net.IP(fmt.Sprintf("Sen IP")))
-                }
-            fmt.Fprintln(w, "NS\t", ns.Host, "-->", nsIP)
-        }
+// Devolve os rexistros PTR ou "Sen PTR"
+func lookupPTR(ip net.IP) []string {
+	ptr, err := net.LookupAddr(ip.String())
+	if err != nil || len(ptr) == 0 {
+		return []string{"Sen PTR"}
+	}
+	return ptr
+}
 
-        // Mostrar rexistros TXT
-        for _, txt := range txtRecords {
-            fmt.Fprintln(w, "TXT\t", txt)
-        }
-
-        // Mostrar o rexistro DKIM principal (default._domainkey)
-        for _, dkim := range dkimRecords {
-            fmt.Fprintln(w, "DKIM\t", dkim)
-        }
-
-        // Mostrar o rexistro DMARC principal (_dmarc)
-        for _, dmarc := range dmarcRecords {
-            fmt.Fprintln(w, "DMARC\t", dmarc)
-        }
-
-        w.Flush()
-        fmt.Print("\n")
-    }
+// Intenta resolver IP, ou devolve placeholder se falla
+func lookupIPOrPlaceholder(host string) []net.IP {
+	ips, err := net.LookupIP(host)
+	if err != nil || len(ips) == 0 {
+		return []net.IP{net.IPv4(0, 0, 0, 0)} // Placeholder: 0.0.0.0
+	}
+	return ips
 }

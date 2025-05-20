@@ -27,7 +27,7 @@ done
 
 main() {
     [ -d "$TARGET/bin" ] || mkdir "$TARGET/bin"
-    docker run --rm --name chkdns-build-$$ \
+    docker run --rm --name comprobadns-build-$$ \
                     --volume "$TARGET/bin:/go/bin" \
                     --volume "$TARGET:/go/src" \
                     --workdir /go/src \
