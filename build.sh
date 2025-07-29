@@ -26,6 +26,10 @@ do
 done
 
 main() {
+
+    # Verificamos que a imaxe estea actualizada
+    docker pull -q $IMAGE
+
     [ -d "$TARGET/bin" ] || mkdir "$TARGET/bin"
     docker run --rm --name comprobadns-build-$$ \
                     --volume "$TARGET/bin:/go/bin" \
