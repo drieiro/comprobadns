@@ -12,7 +12,7 @@ import (
 
 const (
 	programName    = "comprobadns"
-	programVersion = "1.3.3"
+	programVersion = "1.3.4"
 )
 
 func main() {
